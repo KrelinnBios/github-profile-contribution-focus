@@ -44,10 +44,11 @@ def main():
         "colors": {
             **DEFAULT_COLORS,
             "KrelinnBios/YamiboReaderLite": "#7F52FF",
-            "KrelinnBios/NeoDBLite": "#00B8D9",
-            "KrelinnBios/AceSurvey": "#22C55E",
-            "KrelinnBios/github-profile-language-donut": "#EC4899",
-            "KrelinnBios/KrelinnBios": "#F59E0B",
+            "KrelinnBios/NeoDBLite": "#E34F26",
+            "KrelinnBios/AceSurvey": "#F7DF1E",
+            "KrelinnBios/github-profile-language-donut": "#00B8D9",
+            "KrelinnBios/KrelinnBios": "#22C55E",
+            "Other": "#EC4899",
         },
     }
     (ROOT / "examples" / "preview.svg").write_text(

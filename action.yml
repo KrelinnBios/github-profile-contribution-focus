@@ -1,0 +1,51 @@
+name: GitHub Profile Contribution Focus
+description: Generate a theme-aware 12-month repository contribution focus chart for GitHub profile READMEs
+author: KrelinnBios
+
+branding:
+  icon: activity
+  color: purple
+
+inputs:
+  github-token:
+    description: GitHub token used to read public contribution data
+    required: true
+  config-path:
+    description: Configuration file path; defaults are used when the file does not exist
+    required: false
+    default: contribution-focus.config.json
+  readme-path:
+    description: README file whose image reference should be updated
+    required: false
+    default: README.md
+  output-directory:
+    description: Directory where the generated SVG is written
+    required: false
+    default: .
+  output-prefix:
+    description: Filename prefix for generated SVG files
+    required: false
+    default: contribution-focus
+
+outputs:
+  image:
+    description: Path to the generated versioned SVG
+    value: ${{ steps.generate.outputs.image }}
+  changed:
+    description: Whether the SVG, README, or old generated files changed
+    value: ${{ steps.generate.outputs.changed }}
+
+runs:
+  using: composite
+  steps:
+    - id: generate
+      name: Generate contribution focus chart
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: >-
+        python "$GITHUB_ACTION_PATH/src/generate.py"
+        --config "${{ inputs.config-path }}"
+        --readme "${{ inputs.readme-path }}"
+        --output-directory "${{ inputs.output-directory }}"
+        --output-prefix "${{ inputs.output-prefix }}"

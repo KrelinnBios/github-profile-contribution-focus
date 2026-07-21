@@ -1,0 +1,8 @@
+{
+  "owner": "YOUR_GITHUB_USERNAME",
+  "excluded_repositories": [],
+  "colors": {
+    "YOUR_GITHUB_USERNAME/your-repository": "#7F52FF",
+    "Other": "#8B949E"
+  }
+}

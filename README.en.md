@@ -1,0 +1,145 @@
+# GitHub Profile Contribution Focus
+
+<p align="center">
+  <strong>Repositories × Months · Contribution Focus · Automatic Updates</strong><br>
+  Generate a concise 12-month code contribution timeline for a GitHub profile
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-GitHub%20Actions-247344?style=flat-square" alt="GitHub Actions">
+  <img src="https://img.shields.io/badge/license-MIT-1f5f9c?style=flat-square" alt="MIT License">
+</p>
+
+<p align="center">
+  <a href="README.md">简体中文</a> ·
+  <a href="README.zh-TW.md">繁體中文</a> ·
+  <a href="README.en.md">English</a>
+</p>
+
+## Overview
+
+GitHub Profile Contribution Focus is a reusable GitHub Action. It reads public commit contributions from the last 12 months and generates a repository-by-month SVG timeline, showing what someone worked on and how their project focus changed over the year.
+
+The chart names the 5 repositories with the most commits. Every remaining repository is combined month by month into `Other`. The generated image stays in the profile repository and does not depend on an external image service.
+
+## Preview
+
+<p align="center">
+  <img src="examples/preview.svg" alt="Repository contribution focus over the last 12 months">
+</p>
+
+The chart uses a fixed, readable structure:
+
+- The current UTC month and the preceding 11 calendar months run from left to right.
+- Each row is a repository; each cell represents that repository's commit contributions for one month.
+- Four relative intensity levels keep quiet and busy months distinguishable.
+- Repositories are ranked by their total commits across the full period.
+- The top 5 repositories are named; all remaining repositories become `Other`.
+- Row totals appear at the right.
+- One SVG automatically adapts to GitHub light and dark themes.
+
+## Usage
+
+### 1. Add an image placeholder to the profile README
+
+```html
+<p align="left">
+  <img src="./contribution-focus.svg" alt="Contribution focus over the last 12 months" />
+</p>
+```
+
+On the first run, the Action replaces the placeholder with a versioned filename such as `contribution-focus-a1b2c3d4e5f6.svg` to avoid stale GitHub image caches.
+
+### 2. Add a configuration file
+
+Copy [`examples/contribution-focus.config.json`](./examples/contribution-focus.config.json) to the profile repository root.
+
+An empty object is enough inside the public repository whose name matches the account:
+
+```json
+{}
+```
+
+You can also select an account and override repository colors explicitly:
+
+```json
+{
+  "owner": "YOUR_GITHUB_USERNAME",
+  "excluded_repositories": [],
+  "colors": {
+    "YOUR_GITHUB_USERNAME/your-repository": "#7F52FF",
+    "Other": "#8B949E"
+  }
+}
+```
+
+### 3. Add the update workflow
+
+Copy [`examples/update-contribution-focus.yml`](./examples/update-contribution-focus.yml) to `.github/workflows/update-contribution-focus.yml` in the profile repository.
+
+The core step is:
+
+```yaml
+- name: Generate contribution focus chart
+  id: contribution-focus
+  uses: KrelinnBios/github-profile-contribution-focus@main
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    config-path: contribution-focus.config.json
+```
+
+The example updates once a day and can also be run manually. After a stable release exists, pin `@main` to an actual release tag.
+
+## Counting rules
+
+- Data comes from the GitHub GraphQL API `contributionsCollection` field.
+- Only commit contributions counted by GitHub are included; issue, pull request, and review counts are not mixed in.
+- The range is the current UTC month plus the preceding 11 calendar months. The incomplete current month is bold and underlined.
+- Each month is queried separately, so one repository can have at most 31 daily contribution nodes in a query and monthly data is not truncated by connection pagination.
+- By default, only public contributions visible to the supplied token are included. Private repository names are never exposed in the chart.
+- Ranking uses totals for the full period, while `Other` is aggregated separately for each month.
+
+## Configuration
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `owner` | Current repository owner | GitHub username to analyze |
+| `excluded_repositories` | `[]` | Repositories to ignore, as `owner/repo` or a short name |
+| `colors` | Stable generated colors | Overrides keyed by full repository name, short name, or `Other` |
+| `theme` | GitHub light/dark colors | Overrides for text and empty cells |
+
+Full `owner/repo` color keys are recommended to avoid collisions between repositories with the same short name.
+
+Theme fields are `light_text`, `light_muted`, `light_empty`, `dark_text`, `dark_muted`, and `dark_empty`.
+
+## Action inputs and outputs
+
+### Inputs
+
+| Name | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `github-token` | Yes | None | Query public GitHub contribution data |
+| `config-path` | No | `contribution-focus.config.json` | Configuration file path |
+| `readme-path` | No | `README.md` | README whose image reference is updated |
+| `output-directory` | No | `.` | SVG output directory |
+| `output-prefix` | No | `contribution-focus` | Generated filename prefix |
+
+### Outputs
+
+| Name | Description |
+| --- | --- |
+| `image` | Path to the generated versioned SVG |
+| `changed` | Whether the SVG, README reference, or old generated files changed |
+
+## Development
+
+The project uses only the Python standard library:
+
+```bash
+python -m unittest discover -s tests -v
+python examples/generate_preview.py
+```
+
+## License
+
+[MIT](./LICENSE)

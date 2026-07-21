@@ -6,6 +6,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/KrelinnBios/github-profile-contribution-focus/releases"><img src="https://img.shields.io/github/v/release/KrelinnBios/github-profile-contribution-focus?style=flat-square&label=release&color=7F52FF" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/platform-GitHub%20Actions-247344?style=flat-square" alt="GitHub Actions">
   <img src="https://img.shields.io/badge/license-MIT-1f5f9c?style=flat-square" alt="MIT License">
 </p>
@@ -77,18 +78,33 @@ You can also select an account and override repository colors explicitly:
 
 Copy [`examples/update-contribution-focus.yml`](./examples/update-contribution-focus.yml) to `.github/workflows/update-contribution-focus.yml` in the profile repository.
 
-The core step is:
+The core steps resolve and check out the latest stable release at runtime:
 
 ```yaml
+- name: Resolve latest contribution focus release
+  id: contribution-focus-release
+  env:
+    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: |
+    release_tag=$(gh api repos/KrelinnBios/github-profile-contribution-focus/releases/latest --jq .tag_name)
+    echo tag=$release_tag >> $GITHUB_OUTPUT
+
+- name: Check out contribution focus action
+  uses: actions/checkout@v4
+  with:
+    repository: KrelinnBios/github-profile-contribution-focus
+    ref: ${{ steps.contribution-focus-release.outputs.tag }}
+    path: .github/actions/github-profile-contribution-focus
+
 - name: Generate contribution focus chart
   id: contribution-focus
-  uses: KrelinnBios/github-profile-contribution-focus@main
+  uses: ./.github/actions/github-profile-contribution-focus
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     config-path: contribution-focus.config.json
 ```
 
-The example updates once a day and can also be run manually. After a stable release exists, pin `@main` to an actual release tag.
+The example updates once a day and can also be run manually. No cross-repository token is required.
 
 ## Counting rules
 
@@ -130,6 +146,14 @@ Theme fields are `light_text`, `light_muted`, `light_empty`, `dark_text`, `dark_
 | --- | --- |
 | `image` | Path to the generated versioned SVG |
 | `changed` | Whether the SVG, README reference, or old generated files changed |
+
+## Versioning and Security
+
+- Latest stable release: use the workflow above to resolve and check out the latest stable release through the Releases API.
+- Full release tag: select and pin one from [Releases](https://github.com/KrelinnBios/github-profile-contribution-focus/releases) when upgrades should remain explicit.
+- Full commit SHA: provides the strictest supply-chain reproducibility but requires manual update tracking.
+
+The profile workflow uses `contents: write` only to commit the generated SVG and README. The Action does not write to other repositories.
 
 ## Development
 

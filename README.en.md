@@ -22,21 +22,21 @@ GitHub Profile Contribution Focus is a reusable GitHub Action. It reads public c
 
 The chart names the 5 repositories with the most commits. Every remaining repository is combined month by month into `Other`. The generated image stays in the profile repository and does not depend on an external image service.
 
+## Features
+
+- Twelve-month timeline: shows the current month and the preceding 11 calendar months.
+- Repository rows: each row represents a repository, and each cell represents its commit contributions for one month.
+- Relative intensity: four levels distinguish quiet and active months, while empty months use the theme track.
+- Contribution focus: names the top 5 repositories by total commits and combines the rest month by month into `Other`.
+- Commit totals: shows each repository's total for the period at the right.
+- Theme support: one SVG automatically responds to GitHub light and dark themes.
+- Cache handling: generates versioned filenames from content hashes and removes older charts automatically.
+
 ## Preview
 
 <p align="center">
   <img src="examples/preview.svg" alt="Repository contribution focus over the last 12 months">
 </p>
-
-The chart uses a fixed, readable structure:
-
-- The current UTC month and the preceding 11 calendar months run from left to right.
-- Each row is a repository; each cell represents that repository's commit contributions for one month.
-- Four relative intensity levels keep quiet and busy months distinguishable.
-- Repositories are ranked by their total commits across the full period.
-- The top 5 repositories are named; all remaining repositories become `Other`.
-- Row totals appear at the right.
-- One SVG automatically adapts to GitHub light and dark themes.
 
 ## Usage
 
@@ -142,4 +142,8 @@ python examples/generate_preview.py
 
 ## License
 
-[MIT](./LICENSE)
+This project is released under the [MIT License](./LICENSE). Use, modification, distribution, and commercial use are permitted as long as the license and copyright notice are retained.
+
+## Feedback and contributions
+
+Use [GitHub Issues](https://github.com/KrelinnBios/github-profile-contribution-focus/issues) to report usage problems, ask about counting rules, suggest features, or propose other improvements.

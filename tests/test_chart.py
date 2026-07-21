@@ -37,7 +37,9 @@ class BuildSvgTests(unittest.TestCase):
 
         svg = build_svg(rows, self.months, 8, config())
 
-        self.assertIn("Contribution Focus · Last 12 Months", svg)
+        self.assertNotIn('<text class="title"', svg)
+        self.assertIn('<text class="subtitle" x="24" y="28">', svg)
+        self.assertIn('height="280" viewBox="0 0 566 280"', svg)
         self.assertIn("8 repositories", svg)
         self.assertIn(">Other</text>", svg)
         self.assertEqual(72, len(re.findall(r'<rect class="cell(?: |\-)', svg)))

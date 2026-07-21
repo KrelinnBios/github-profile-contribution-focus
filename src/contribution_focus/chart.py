@@ -64,8 +64,8 @@ def build_svg(
     cell_size = 18
     cell_gap = 6
     row_height = 32
-    header_y = 90
-    grid_y = 104
+    header_y = 58
+    grid_y = 72
     grid_x = padding_x + label_width
     grid_width = len(months) * cell_size + (len(months) - 1) * cell_gap
     total_value_x = grid_x + grid_width + 58
@@ -145,7 +145,6 @@ def build_svg(
   <title id="title">Contribution Focus · Last 12 Months</title>
   <desc id="desc">{description}</desc>
   <style>
-    .title {{ fill: {theme["light_text"]}; font: 600 17px {FONT_STACK}; }}
     .subtitle {{ fill: {theme["light_muted"]}; font: 400 14px {FONT_STACK}; }}
     .repo-label {{ fill: {theme["light_text"]}; font: 500 14px {FONT_STACK}; }}
     .month, .total {{ fill: {theme["light_muted"]}; font: 500 12px {FONT_STACK}; }}
@@ -157,13 +156,12 @@ def build_svg(
     .level-3 {{ fill-opacity: 0.74; }}
     .level-4 {{ fill-opacity: 1; }}
     @media (prefers-color-scheme: dark) {{
-      .title, .repo-label, .current-month {{ fill: {theme["dark_text"]}; }}
+      .repo-label, .current-month {{ fill: {theme["dark_text"]}; }}
       .subtitle, .month, .total {{ fill: {theme["dark_muted"]}; }}
       .current-marker {{ fill: {theme["dark_text"]}; }}
       .cell-empty {{ fill: {theme["dark_empty"]}; opacity: 0.72; }}
     }}
   </style>
 
-  <text class="title" x="{padding_x}" y="30">Contribution Focus · Last 12 Months</text>
-  <text class="subtitle" x="{padding_x}" y="54">{html.escape(subtitle)}</text>{grid_content}
+  <text class="subtitle" x="{padding_x}" y="28">{html.escape(subtitle)}</text>{grid_content}
 </svg>'''

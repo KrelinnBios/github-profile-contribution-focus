@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Repositories × Months · Contribution Focus · Automatic Updates</strong><br>
-  Generate a concise past-year contribution focus chart for a GitHub profile
+  Generate a concise contribution focus chart from GitHub's “Last year” range
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@ The chart names the 5 repositories with the most contributions. Every remaining 
 
 ## Features
 
-- Past-year timeline: uses the same default range as the GitHub profile and usually spans 13 calendar months.
+- GitHub “Last year” timeline: uses the profile's default range and usually spans 13 calendar months.
 - Repository rows: each row represents a visible repository the user contributed to, and each cell represents all of its contributions for one month.
 - Relative intensity: four levels distinguish quiet and active months, while empty months use the theme track.
 - Contribution focus: names the top 5 repositories by total contributions and combines the rest month by month into `Other`.
@@ -36,7 +36,7 @@ The chart names the 5 repositories with the most contributions. Every remaining 
 ## Preview
 
 <p align="center">
-  <img src="examples/preview.svg" alt="Repository contribution focus over the past year">
+  <img src="examples/preview.svg" alt="Repository contribution focus for GitHub's Last year range">
 </p>
 
 ## Usage
@@ -45,7 +45,7 @@ The chart names the 5 repositories with the most contributions. Every remaining 
 
 ```html
 <p align="left">
-  <img src="./contribution-focus.svg" alt="Contribution focus over the past year" />
+  <img src="./contribution-focus.svg" alt="Contribution focus for GitHub's Last year range" />
 </p>
 ```
 
@@ -114,7 +114,7 @@ The example updates once a day and can also be run manually. No cross-repository
 - The range comes directly from the default `contributionsCollection` start and end times, matching the profile's “last year” period; the first and last months are usually partial.
 - Each month is queried separately. Commits are summed from daily nodes, while other types use connection totals to avoid item-pagination gaps.
 - Discussions, inaccessible private contributions, and other counts without a safe repository attribution are placed in `Other`; private repository names are never exposed.
-- Ranking uses total contributions for the past year, while `Other` is aggregated separately for each month.
+- Ranking uses total contributions from GitHub's “Last year” range, while `Other` is aggregated separately for each month.
 
 ## Configuration
 

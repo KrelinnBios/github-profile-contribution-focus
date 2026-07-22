@@ -49,14 +49,14 @@ def build_svg(
     repository_count: int,
     config: dict,
 ) -> str:
-    if len(months) != 12:
-        raise ValueError("the contribution focus chart requires exactly 12 months")
+    if not months:
+        raise ValueError("the contribution focus chart requires at least one month")
     if any(len(row.monthly) != len(months) for row in rows):
-        raise ValueError("each repository row must contain exactly 12 month values")
+        raise ValueError("each repository row must match the month count")
 
     theme = config["theme"]
     colors = config["colors"]
-    total_commits = sum(row.total for row in rows)
+    total_contributions = sum(row.total for row in rows)
     labels = _display_labels(rows)
 
     padding_x = 24
@@ -74,9 +74,10 @@ def build_svg(
 
     repository_word = "repository" if repository_count == 1 else "repositories"
     subtitle = (
-        f"{total_commits} commits across {repository_count} {repository_word}"
-        if total_commits
-        else "No public commit contributions in the last 12 months"
+        f"{total_contributions} contributions across "
+        f"{repository_count} {repository_word}"
+        if total_contributions
+        else "No visible contributions in the past year"
     )
 
     positive_values = [value for row in rows for value in row.monthly if value > 0]
@@ -112,7 +113,7 @@ def build_svg(
             css_class = "cell-empty" if level == 0 else f"cell level-{level}"
             fill = "" if level == 0 else f' fill="{color}"'
             tooltip = html.escape(
-                f"{label} · {months[month_index].key}: {value} commits"
+                f"{label} · {months[month_index].key}: {value} contributions"
             )
             row_elements.append(
                 f'    <rect class="{css_class}" x="{x}" y="{y}" '
@@ -126,7 +127,8 @@ def build_svg(
         descriptions.append(f"{label} {row.total}")
 
     description = html.escape(
-        f"Contribution focus from {months[0].key} through {months[-1].key}. "
+        f"Contribution focus from {months[0].start:%Y-%m-%d} "
+        f"through {months[-1].end:%Y-%m-%d}. "
         + (", ".join(descriptions) if descriptions else subtitle)
         + "."
     )
@@ -142,7 +144,7 @@ def build_svg(
 
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">
-  <title id="title">Contribution Focus · Last 12 Months</title>
+  <title id="title">Contribution Focus · Last Year</title>
   <desc id="desc">{description}</desc>
   <style>
     .subtitle {{ fill: {theme["light_muted"]}; font: 400 14px {FONT_STACK}; }}

@@ -1,4 +1,4 @@
-"""Month range helpers for the rolling contribution window."""
+"""Month range helpers for GitHub contribution collections."""
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -60,4 +60,37 @@ def month_windows(now: datetime | None = None, count: int = 12) -> list[MonthWin
                 current=is_current,
             )
         )
+    return windows
+
+
+def month_windows_between(start: datetime, end: datetime) -> list[MonthWindow]:
+    """Split an inclusive GitHub contribution range into UTC month buckets."""
+
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=timezone.utc)
+    start = start.astimezone(timezone.utc)
+    end = end.astimezone(timezone.utc)
+    if start > end:
+        raise ValueError("start must not be after end")
+
+    windows = []
+    year, month = start.year, start.month
+    while (year, month) <= (end.year, end.month):
+        next_year, next_month = _shift_month(year, month, 1)
+        calendar_start = datetime(year, month, 1, tzinfo=timezone.utc)
+        next_start = datetime(next_year, next_month, 1, tzinfo=timezone.utc)
+        window_start = max(start, calendar_start)
+        window_end = min(end, next_start - timedelta(seconds=1))
+        windows.append(
+            MonthWindow(
+                key=f"{year:04d}-{month:02d}",
+                label=f"{month:02d}",
+                start=window_start,
+                end=window_end,
+                current=(year, month) == (end.year, end.month),
+            )
+        )
+        year, month = next_year, next_month
     return windows

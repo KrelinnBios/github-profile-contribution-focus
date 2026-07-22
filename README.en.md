@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Repositories × Months · Contribution Focus · Automatic Updates</strong><br>
-  Generate a concise 12-month code contribution timeline for a GitHub profile
+  Generate a concise past-year contribution focus chart for a GitHub profile
 </p>
 
 <p align="center">
@@ -19,24 +19,24 @@
 
 ## Overview
 
-GitHub Profile Contribution Focus is a reusable GitHub Action. It reads public commit contributions from the last 12 months and generates a repository-by-month SVG timeline, showing what someone worked on and how their project focus changed over the year.
+GitHub Profile Contribution Focus is a reusable GitHub Action. It reads the visible contributions in a GitHub profile's “last year” range and generates a repository-by-month SVG timeline, showing which projects someone participated in and how their focus changed.
 
-The chart names the 5 repositories with the most commits. Every remaining repository is combined month by month into `Other`. The generated image stays in the profile repository and does not depend on an external image service.
+The chart names the 5 repositories with the most contributions. Every remaining repository and every contribution that cannot be safely attributed to a repository are combined month by month into `Other`. The generated image stays in the profile repository and does not depend on an external image service.
 
 ## Features
 
-- Twelve-month timeline: shows the current month and the preceding 11 calendar months.
-- Repository rows: each row represents a repository, and each cell represents its commit contributions for one month.
+- Past-year timeline: uses the same default range as the GitHub profile and usually spans 13 calendar months.
+- Repository rows: each row represents a visible repository the user contributed to, and each cell represents all of its contributions for one month.
 - Relative intensity: four levels distinguish quiet and active months, while empty months use the theme track.
-- Contribution focus: names the top 5 repositories by total commits and combines the rest month by month into `Other`.
-- Commit totals: shows each repository's total for the period at the right.
+- Contribution focus: names the top 5 repositories by total contributions and combines the rest month by month into `Other`.
+- Contribution totals: shows each repository's total for the period at the right.
 - Theme support: one SVG automatically responds to GitHub light and dark themes.
 - Cache handling: generates versioned filenames from content hashes and removes older charts automatically.
 
 ## Preview
 
 <p align="center">
-  <img src="examples/preview.svg" alt="Repository contribution focus over the last 12 months">
+  <img src="examples/preview.svg" alt="Repository contribution focus over the past year">
 </p>
 
 ## Usage
@@ -45,7 +45,7 @@ The chart names the 5 repositories with the most commits. Every remaining reposi
 
 ```html
 <p align="left">
-  <img src="./contribution-focus.svg" alt="Contribution focus over the last 12 months" />
+  <img src="./contribution-focus.svg" alt="Contribution focus over the past year" />
 </p>
 ```
 
@@ -109,11 +109,12 @@ The example updates once a day and can also be run manually. No cross-repository
 ## Counting rules
 
 - Data comes from the GitHub GraphQL API `contributionsCollection` field.
-- Only commit contributions counted by GitHub are included; issue, pull request, and review counts are not mixed in.
-- The range is the current UTC month plus the preceding 11 calendar months. The incomplete current month is bold and underlined.
-- Each month is queried separately, so one repository can have at most 31 daily contribution nodes in a query and monthly data is not truncated by connection pagination.
-- By default, only public contributions visible to the supplied token are included. Private repository names are never exposed in the chart.
-- Ranking uses totals for the full period, while `Other` is aggregated separately for each month.
+- Totals follow GitHub's contribution calendar. Commits, issues, pull requests, reviews, and repository creations that GraphQL can attribute are assigned to their repositories.
+- Every repository visible to the token is eligible, regardless of who owns it.
+- The range comes directly from the default `contributionsCollection` start and end times, matching the profile's “last year” period; the first and last months are usually partial.
+- Each month is queried separately. Commits are summed from daily nodes, while other types use connection totals to avoid item-pagination gaps.
+- Discussions, inaccessible private contributions, and other counts without a safe repository attribution are placed in `Other`; private repository names are never exposed.
+- Ranking uses total contributions for the past year, while `Other` is aggregated separately for each month.
 
 ## Configuration
 
@@ -134,7 +135,7 @@ Theme fields are `light_text`, `light_muted`, `light_empty`, `dark_text`, `dark_
 
 | Name | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `github-token` | Yes | None | Query public GitHub contribution data |
+| `github-token` | Yes | None | Query visible GitHub contribution data |
 | `config-path` | No | `contribution-focus.config.json` | Configuration file path |
 | `readme-path` | No | `README.md` | README whose image reference is updated |
 | `output-directory` | No | `.` | SVG output directory |

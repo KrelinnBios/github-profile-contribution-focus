@@ -1,4 +1,4 @@
-"""GitHub GraphQL access for monthly commit contribution data."""
+"""GitHub GraphQL access for repository contribution data."""
 
 import json
 import os
@@ -6,18 +6,19 @@ import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Callable
 
-from .dates import MonthWindow, github_datetime
+from .dates import MonthWindow, github_datetime, month_windows_between
 
 API_ROOT = os.environ.get("GITHUB_API_URL", "https://api.github.com").rstrip("/")
 
-SUMMARY_QUERY = """
-query ContributionFocusSummary($login: String!, $from: DateTime!, $to: DateTime!) {
+RANGE_QUERY = """
+query ContributionFocusRange($login: String!) {
   user(login: $login) {
-    contributionsCollection(from: $from, to: $to) {
-      totalCommitContributions
-      totalRepositoriesWithContributedCommits
+    contributionsCollection {
+      startedAt
+      endedAt
     }
   }
 }
@@ -27,7 +28,9 @@ MONTH_QUERY = """
 query ContributionFocusMonth($login: String!, $from: DateTime!, $to: DateTime!) {
   user(login: $login) {
     contributionsCollection(from: $from, to: $to) {
-      totalCommitContributions
+      contributionCalendar {
+        totalContributions
+      }
       commitContributionsByRepository(maxRepositories: 100) {
         repository {
           nameWithOwner
@@ -35,6 +38,37 @@ query ContributionFocusMonth($login: String!, $from: DateTime!, $to: DateTime!) 
         contributions(first: 31) {
           nodes {
             commitCount
+          }
+        }
+      }
+      issueContributionsByRepository(maxRepositories: 100) {
+        repository {
+          nameWithOwner
+        }
+        contributions {
+          totalCount
+        }
+      }
+      pullRequestContributionsByRepository(maxRepositories: 100) {
+        repository {
+          nameWithOwner
+        }
+        contributions {
+          totalCount
+        }
+      }
+      pullRequestReviewContributionsByRepository(maxRepositories: 100) {
+        repository {
+          nameWithOwner
+        }
+        contributions {
+          totalCount
+        }
+      }
+      repositoryContributions(first: 100) {
+        nodes {
+          repository {
+            nameWithOwner
           }
         }
       }
@@ -50,7 +84,7 @@ class ContributionActivity:
 
     repositories: dict[str, tuple[int, ...]]
     unattributed: tuple[int, ...]
-    total_commits: int
+    total_contributions: int
     repository_count: int
 
 
@@ -136,22 +170,37 @@ def _excluded(repository: str, excluded: set[str]) -> bool:
     return normalized in excluded or short_name in excluded
 
 
+def contribution_windows(
+    owner: str,
+    client: Callable[[str, dict], dict] = github_graphql,
+) -> list[MonthWindow]:
+    """Return month buckets for GitHub's default past-year profile range."""
+
+    collection = _collection(client(RANGE_QUERY, {"login": owner}), owner)
+    start = datetime.fromisoformat(collection["startedAt"].replace("Z", "+00:00"))
+    end = datetime.fromisoformat(collection["endedAt"].replace("Z", "+00:00"))
+    return month_windows_between(start, end)
+
+
+def _grouped_count(item: dict, field: str) -> int:
+    if field == "commitContributionsByRepository":
+        return sum(
+            int(node.get("commitCount", 0))
+            for node in item.get("contributions", {}).get("nodes", [])
+        )
+    return int(item.get("contributions", {}).get("totalCount", 0))
+
+
 def fetch_activity(
     owner: str,
     windows: list[MonthWindow],
     config: dict,
     client: Callable[[str, dict], dict] = github_graphql,
 ) -> ContributionActivity:
-    """Fetch and aggregate GitHub-qualified commits for each calendar month."""
+    """Fetch and aggregate all GitHub profile contributions by repository."""
 
     if not windows:
         raise ValueError("at least one month window is required")
-
-    summary_data = client(
-        SUMMARY_QUERY,
-        _variables(owner, windows[0].start, windows[-1].end),
-    )
-    summary = _collection(summary_data, owner)
 
     def fetch_month(window: MonthWindow) -> dict:
         data = client(MONTH_QUERY, _variables(owner, window.start, window.end))
@@ -164,28 +213,41 @@ def fetch_activity(
     month_count = len(windows)
     repository_months: dict[str, list[int]] = {}
     unattributed = [0] * month_count
-    excluded_seen: set[str] = set()
     excluded = config["excluded_repositories"]
 
     for month_index, collection in enumerate(monthly_collections):
         known_total = 0
-        for item in collection.get("commitContributionsByRepository", []):
-            repository = item["repository"]["nameWithOwner"]
-            count = sum(
-                int(node.get("commitCount", 0))
-                for node in item.get("contributions", {}).get("nodes", [])
-            )
-            known_total += count
-            if count <= 0:
-                continue
+        grouped_fields = (
+            "commitContributionsByRepository",
+            "issueContributionsByRepository",
+            "pullRequestContributionsByRepository",
+            "pullRequestReviewContributionsByRepository",
+        )
+        for field in grouped_fields:
+            for item in collection.get(field, []):
+                repository = item["repository"]["nameWithOwner"]
+                count = _grouped_count(item, field)
+                known_total += count
+                if count <= 0 or _excluded(repository, excluded):
+                    continue
+                repository_months.setdefault(repository, [0] * month_count)[
+                    month_index
+                ] += count
+
+        for node in collection.get("repositoryContributions", {}).get("nodes", []):
+            repository = node["repository"]["nameWithOwner"]
+            known_total += 1
             if _excluded(repository, excluded):
-                excluded_seen.add(repository.casefold())
                 continue
             repository_months.setdefault(repository, [0] * month_count)[
                 month_index
-            ] += count
+            ] += 1
 
-        month_total = int(collection.get("totalCommitContributions", known_total))
+        month_total = int(
+            collection.get("contributionCalendar", {}).get(
+                "totalContributions", known_total
+            )
+        )
         unattributed[month_index] = max(0, month_total - known_total)
 
     repositories = {
@@ -196,16 +258,10 @@ def fetch_activity(
     included_total = sum(sum(monthly) for monthly in repositories.values()) + sum(
         unattributed
     )
-    api_repository_count = int(
-        summary.get("totalRepositoriesWithContributedCommits", len(repositories))
-    )
-    repository_count = max(
-        len(repositories), api_repository_count - len(excluded_seen)
-    )
 
     return ContributionActivity(
         repositories=repositories,
         unattributed=tuple(unattributed),
-        total_commits=included_total,
-        repository_count=repository_count,
+        total_contributions=included_total,
+        repository_count=len(repositories),
     )

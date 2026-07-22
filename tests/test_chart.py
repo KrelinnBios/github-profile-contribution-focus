@@ -22,27 +22,28 @@ def config():
 class BuildSvgTests(unittest.TestCase):
     def setUp(self):
         self.months = month_windows(
-            datetime(2026, 7, 22, tzinfo=timezone.utc)
+            datetime(2026, 7, 22, tzinfo=timezone.utc), count=13
         )
 
     def test_chart_renders_five_repositories_and_other(self):
         rows = [
             FocusRow(
                 f"KrelinnBios/Repository-{index}",
-                tuple(index + month for month in range(12)),
+                tuple(index + month for month in range(13)),
             )
             for index in range(1, 6)
         ]
-        rows.append(FocusRow("Other", (1,) * 12, is_other=True))
+        rows.append(FocusRow("Other", (1,) * 13, is_other=True))
 
         svg = build_svg(rows, self.months, 8, config())
 
         self.assertNotIn('<text class="title"', svg)
         self.assertIn('<text class="subtitle" x="24" y="28">', svg)
-        self.assertIn('height="280" viewBox="0 0 566 280"', svg)
+        self.assertIn('height="280" viewBox="0 0 590 280"', svg)
+        self.assertIn("contributions across", svg)
         self.assertIn("8 repositories", svg)
         self.assertIn(">Other</text>", svg)
-        self.assertEqual(72, len(re.findall(r'<rect class="cell(?: |\-)', svg)))
+        self.assertEqual(78, len(re.findall(r'<rect class="cell(?: |\-)', svg)))
         self.assertEqual(6, len(re.findall(r'<text class="total"', svg)))
         self.assertIn("@media (prefers-color-scheme: dark)", svg)
         self.assertIn('class="month current-month"', svg)
@@ -50,8 +51,8 @@ class BuildSvgTests(unittest.TestCase):
 
     def test_duplicate_short_names_use_full_repository_name(self):
         rows = [
-            FocusRow("first/shared", (1,) * 12),
-            FocusRow("second/shared", (2,) * 12),
+            FocusRow("first/shared", (1,) * 13),
+            FocusRow("second/shared", (2,) * 13),
         ]
 
         svg = build_svg(rows, self.months, 2, config())
@@ -62,7 +63,7 @@ class BuildSvgTests(unittest.TestCase):
     def test_empty_data_has_a_clear_zero_state(self):
         svg = build_svg([], self.months, 0, config())
 
-        self.assertIn("No public commit contributions", svg)
+        self.assertIn("No visible contributions in the past year", svg)
         self.assertNotIn('<text class="total"', svg)
 
     def test_intensity_is_relative_and_keeps_small_values_visible(self):
@@ -72,9 +73,18 @@ class BuildSvgTests(unittest.TestCase):
         self.assertEqual(3, intensity_level(50, 100))
         self.assertEqual(4, intensity_level(100, 100))
 
-    def test_requires_twelve_months(self):
+    def test_requires_at_least_one_month(self):
         with self.assertRaises(ValueError):
-            build_svg([], self.months[:-1], 0, config())
+            build_svg([], [], 0, config())
+
+    def test_repository_rows_must_match_month_count(self):
+        with self.assertRaises(ValueError):
+            build_svg(
+                [FocusRow("owner/repository", (1,) * 12)],
+                self.months,
+                1,
+                config(),
+            )
 
 
 if __name__ == "__main__":

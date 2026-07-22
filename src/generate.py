@@ -2,14 +2,16 @@
 """Generate a versioned SVG contribution focus chart for a GitHub profile."""
 
 import argparse
-from datetime import datetime, timezone
 from pathlib import Path
 
 from contribution_focus.aggregate import build_rows
 from contribution_focus.chart import build_svg
 from contribution_focus.config import load_config
-from contribution_focus.dates import month_windows
-from contribution_focus.github import fetch_activity, repository_context
+from contribution_focus.github import (
+    contribution_windows,
+    fetch_activity,
+    repository_context,
+)
 from contribution_focus.output import set_action_outputs, write_outputs
 
 
@@ -26,7 +28,7 @@ def main():
     args = parse_args()
     config = load_config(Path(args.config))
     owner = repository_context(config)
-    months = month_windows(datetime.now(timezone.utc))
+    months = contribution_windows(owner)
     activity = fetch_activity(owner, months, config)
     rows = build_rows(activity.repositories, activity.unattributed)
     svg = build_svg(rows, months, activity.repository_count, config)

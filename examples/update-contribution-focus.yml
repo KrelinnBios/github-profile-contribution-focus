@@ -2,7 +2,7 @@ name: Update contribution focus chart
 
 on:
   schedule:
-    - cron: "17 0 * * *"
+    - cron: '0 */6 * * *'
   workflow_dispatch:
   push:
     paths:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out profile repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Resolve latest contribution focus release
         id: contribution-focus-release
@@ -28,7 +28,7 @@ jobs:
           echo tag=$release_tag >> $GITHUB_OUTPUT
 
       - name: Check out contribution focus action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: KrelinnBios/github-profile-contribution-focus
           ref: ${{ steps.contribution-focus-release.outputs.tag }}

@@ -90,7 +90,7 @@ The core steps resolve and check out the latest stable release at runtime:
     echo tag=$release_tag >> $GITHUB_OUTPUT
 
 - name: Check out contribution focus action
-  uses: actions/checkout@v4
+  uses: actions/checkout@v7
   with:
     repository: KrelinnBios/github-profile-contribution-focus
     ref: ${{ steps.contribution-focus-release.outputs.tag }}
@@ -104,7 +104,7 @@ The core steps resolve and check out the latest stable release at runtime:
     config-path: contribution-focus.config.json
 ```
 
-The example updates once a day and can also be run manually. No cross-repository token is required.
+The example runs automatically every 6 hours and can also be triggered manually. Each run resolves the latest stable release, and no cross-repository token is required.
 
 ## Counting rules
 
